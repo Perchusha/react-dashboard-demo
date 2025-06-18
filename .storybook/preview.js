@@ -1,5 +1,14 @@
 import '../src/index.css';
 
-export const parameters = {
-  actions: { argTypesRegex: '^on[A-Z].*' },
+const preview = {
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/i,
+      },
+    },
+  },
 };
+
+export default preview;

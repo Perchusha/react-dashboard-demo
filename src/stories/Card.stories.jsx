@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card } from '../src/components';
+import { Card } from '../components';
 
 export default {
   title: 'Molecules/Card',

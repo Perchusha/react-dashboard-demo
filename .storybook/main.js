@@ -1,4 +1,10 @@
-module.exports = {
-  stories: ['../src/**/*.stories.@(js|jsx)'],
-  addons: ['@storybook/addon-essentials'],
+const config = {
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  addons: [],
+  framework: {
+    name: '@storybook/react-vite',
+    options: {},
+  },
 };
+
+export default config;
