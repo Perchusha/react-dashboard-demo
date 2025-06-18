@@ -12,7 +12,7 @@ yarn install
 
 ## Available Scripts
 
-* `yarn start`
+* `yarn dev`
 
   Starts the development server and opens the app in your default browser.
 
@@ -22,12 +22,11 @@ yarn install
 
 * `yarn build`
 
-  Builds the production bundle into the `build` folder.
+  Builds the production bundle into the `dist` folder.
 
 ## Technologies Used
 
-* React (no TypeScript)
-* Tailwind CSS
-* CSS
+* React (no TypeScript) + Vite
+* Tailwind
 * Storybook
 * Atomic Design pattern
