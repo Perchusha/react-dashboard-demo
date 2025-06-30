@@ -1,11 +1,5 @@
-import { Button } from '../../atoms/Button/Button';
+import { Button } from '../../atoms/Button/Button.js';
 
-/**
- * Accessible and reusable Tabs component
- * - Compliant with WCAG AA
- * - Supports keyboard navigation and ARIA attributes
- * - Follows Atomic Design principles
- */
 export class Tabs {
   constructor({ tabs = [], preLoad = false, align = 'left' }) {
     if (!Array.isArray(tabs)) {

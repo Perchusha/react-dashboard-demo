@@ -5,6 +5,14 @@ import { Tabs } from './Tabs';
 export default {
   title: 'Molecules/Tabs',
   tags: ['autodocs'],
+  argTypes: {
+    align: {
+      control: {
+        type: 'select',
+      },
+      options: ['left', 'center', 'right'],
+    },
+  },
 };
 
 const Template = args => {

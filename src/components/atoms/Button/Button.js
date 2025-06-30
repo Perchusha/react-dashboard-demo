@@ -19,8 +19,8 @@ export class Button {
     this.baseClass = `font-bold py-2 px-4 rounded ${!this.disabled && 'cursor-pointer'}`;
 
     this.variants = {
-      primary: 'bg-blue-500 text-white hover:bg-blue-600',
-      secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300',
+      primary: `bg-blue-500 text-white ${!this.disabled && 'hover:bg-blue-600'}`,
+      secondary: `bg-gray-200 text-gray-800 ${!this.disabled && 'hover:bg-gray-300'}`,
     };
     this.activeClass = 'bg-blue-800';
     this.disabledClass = 'opacity-50 cursor-not-allowed';
