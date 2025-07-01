@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auth Form Demo</title>
+  <script type="module" src="./AuthForm.js"></script>
+  <script type="module">
+    import { AuthForm } from './AuthForm.js';
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const root = document.getElementById('auth-form-container');
+      const form = new AuthForm();
+      root.appendChild(form.getElement());
+    });
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-8 bg-gray-50 min-h-screen">
+<main class="max-w-md mx-auto">
+  <h1 class="text-2xl font-bold mb-6">Auth Form Example</h1>
+  <section id="auth-form-container" aria-label="Authentication Form Demo"></section>
+</main>
+</body>
+</html>

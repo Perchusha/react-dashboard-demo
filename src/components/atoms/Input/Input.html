@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Input Component Example</title>
+  <script type="module" src="./Input.js"></script>
+  <script type="module">
+    import { Input } from './Input.js';
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const container = document.getElementById('input-demo');
+
+      const input = new Input({
+        id: 'example-input',
+        name: 'example',
+        placeholder: 'Type something...',
+      });
+
+      container.appendChild(input.getElement());
+    });
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-8 bg-gray-50">
+<main class="max-w-3xl mx-auto">
+  <h1 class="text-xl font-bold mb-4">Input Component Demo</h1>
+  <section id="input-demo" aria-label="Input Example"></section>
+</main>
+</body>
+</html>

@@ -1,5 +1,3 @@
-// src/components/molecules/Tabs/Tabs.stories.js
-
 import { Tabs } from './Tabs';
 
 export default {
@@ -7,16 +5,21 @@ export default {
   tags: ['autodocs'],
   argTypes: {
     align: {
-      control: {
-        type: 'select',
-      },
+      control: { type: 'select' },
       options: ['left', 'center', 'right'],
     },
+    preLoad: { control: 'boolean' },
   },
 };
 
 const Template = args => {
-  const tabs = new Tabs(args);
+  const tabs = new Tabs({
+    ...args,
+    onTabChange: index => {
+      console.log('Tab changed to:', index);
+    },
+  });
+
   return tabs.getElement();
 };
 
@@ -31,23 +34,45 @@ Default.args = {
   ],
 };
 
-export const LazyLoaded = Template.bind({});
-LazyLoaded.args = {
+export const DynamicContent = Template.bind({});
+DynamicContent.args = {
   preLoad: false,
-  align: 'center',
+  align: 'left',
   tabs: [
-    { label: 'Alpha', content: '<p>Alpha content loaded on demand.</p>' },
-    { label: 'Beta', content: '<p>Beta content loaded on demand.</p>' },
+    {
+      label: 'Alpha',
+      content: '<p><strong>Alpha</strong> content loaded on demand.</p>',
+    },
+    {
+      label: 'Beta',
+      content: (() => {
+        const div = document.createElement('div');
+        div.className = 'text-sm text-blue-700';
+        div.textContent = 'This is a dynamically generated DOM element.';
+        return div;
+      })(),
+    },
   ],
 };
 
-export const RightAligned = Template.bind({});
-RightAligned.args = {
+export const CenterAligned = Template.bind({});
+CenterAligned.args = {
   preLoad: true,
-  align: 'right',
+  align: 'center',
   tabs: [
     { label: 'One', content: '<p>Tab one.</p>' },
     { label: 'Two', content: '<p>Tab two.</p>' },
     { label: 'Three', content: '<p>Tab three.</p>' },
+  ],
+};
+
+export const WithDisabledTab = Template.bind({});
+WithDisabledTab.args = {
+  preLoad: true,
+  align: 'left',
+  tabs: [
+    { label: 'Available', content: '<p>This tab works.</p>' },
+    { label: 'Disabled', content: '<p>Should not be shown.</p>', disabled: true },
+    { label: 'Another', content: '<p>Another active tab.</p>' },
   ],
 };

@@ -9,23 +9,24 @@
     import { Button } from './Button.js';
 
     window.addEventListener('DOMContentLoaded', () => {
-      const container = document.getElementById('root');
+      const container = document.getElementById('button-demo');
 
-      const btn = new Button({
+      const button = new Button({
         text: 'Click Me',
         variant: 'primary',
         id: 'example-btn',
+        onClick: () => alert('Clicked!'),
       });
 
-      container.appendChild(btn.getElement());
+      container.appendChild(button.getElement());
     });
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="p-4 bg-gray-50">
-<main>
+<body class="p-8 bg-gray-50">
+<main class="max-w-3xl mx-auto">
   <h1 class="text-xl font-bold mb-4">Button Component</h1>
-  <div id="root"></div>
+  <section id="button-demo" aria-label="Button Example"></section>
 </main>
 </body>
 </html>

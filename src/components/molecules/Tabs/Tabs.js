@@ -1,7 +1,7 @@
 import { Button } from '../../atoms/Button/Button.js';
 
 export class Tabs {
-  constructor({ tabs = [], preLoad = false, align = 'left' }) {
+  constructor({ tabs = [], preLoad = false, align = 'left', onTabChange = null }) {
     if (!Array.isArray(tabs)) {
       throw new Error('Tabs constructor expects an array of tab definitions.');
     }
@@ -9,6 +9,7 @@ export class Tabs {
     this.tabs = tabs;
     this.preLoad = preLoad;
     this.align = align;
+    this.onTabChange = onTabChange;
 
     this.container = document.createElement('div');
     this.tabButtons = [];
@@ -34,28 +35,29 @@ export class Tabs {
 
     this.tabs.forEach((tab, index) => {
       const isSelected = index === 0;
+      const isDisabled = tab.disabled === true;
       const tabId = `tab-${index}`;
       const panelId = `panel-${index}`;
 
       const button = new Button({
         text: tab.label,
-        id: tabId,
-        role: 'tab',
-        variant: 'primary',
-        active: isSelected,
-        disabled: false,
-        'aria-controls': panelId,
-        'aria-selected': String(isSelected),
-        tabindex: isSelected ? '0' : '-1',
+        variant: 'secondary',
+        size: 'medium',
+        disabled: isDisabled,
+        className: 'rounded-none border-b-2 border-transparent aria-selected:border-blue-500',
       });
+
+      const el = button.getElement();
+      el.id = tabId;
+      el.setAttribute('role', 'tab');
+      el.setAttribute('aria-controls', panelId);
+      el.setAttribute('aria-selected', String(isSelected));
+      el.setAttribute('tabindex', isDisabled ? '-1' : isSelected ? '0' : '-1');
 
       this.tabButtons.push(button);
-      this.tablist.appendChild(button.getElement());
+      this.tablist.appendChild(el);
 
-      this.panelMap.set(panelId, {
-        content: tab.content,
-        tabId,
-      });
+      this.panelMap.set(panelId, { content: tab.content, tabId });
 
       if (this.preLoad) {
         const panel = document.createElement('div');
@@ -65,15 +67,17 @@ export class Tabs {
         panel.tabIndex = 0;
         panel.hidden = !isSelected;
         panel.className = 'p-4';
-        panel.innerHTML = tab.content;
+        panel.innerHTML = typeof tab.content === 'string' ? tab.content : '';
         this.panels.push(panel);
       }
     });
 
     this.tabButtons.forEach((btn, i) => {
-      const element = btn.getElement();
-      element.addEventListener('click', () => this.activateTab(i));
-      element.addEventListener('keydown', e => this.handleKeyDown(e));
+      const el = btn.getElement();
+      if (!el.disabled) {
+        el.addEventListener('click', () => this.activateTab(i));
+        el.addEventListener('keydown', e => this._handleKeyDown(e));
+      }
     });
 
     this.container.appendChild(this.tablist);
@@ -84,7 +88,37 @@ export class Tabs {
     }
   }
 
-  renderPanel(panelId) {
+  activateTab(index) {
+    const btn = this.tabButtons[index];
+    if (!btn || btn.getElement().disabled) return;
+
+    this.tabButtons.forEach((btn, i) => {
+      const isActive = i === index;
+      const el = btn.getElement();
+
+      btn.setActive(isActive);
+      el.setAttribute('aria-selected', String(isActive));
+      el.setAttribute('tabindex', isActive ? '0' : '-1');
+
+      if (this.preLoad && this.panels[i]) {
+        this.panels[i].hidden = !isActive;
+      }
+    });
+
+    const panelId = `panel-${index}`;
+    if (!this.preLoad) {
+      this._renderPanel(panelId);
+    }
+
+    const el = this.tabButtons[index].getElement();
+    if (el.offsetParent !== null) el.focus();
+
+    if (typeof this.onTabChange === 'function') {
+      this.onTabChange(index);
+    }
+  }
+
+  _renderPanel(panelId) {
     const data = this.panelMap.get(panelId);
     if (!data) return;
 
@@ -96,58 +130,54 @@ export class Tabs {
     panel.setAttribute('aria-labelledby', data.tabId);
     panel.tabIndex = 0;
     panel.className = 'p-4';
-    panel.innerHTML = data.content;
+
+    if (typeof data.content === 'string') {
+      panel.innerHTML = data.content;
+    } else if (data.content instanceof HTMLElement) {
+      panel.appendChild(data.content);
+    }
 
     this.panelContainer.appendChild(panel);
   }
 
-  activateTab(index) {
-    this.tabButtons.forEach((btn, i) => {
-      const isActive = i === index;
-      const el = btn.getElement();
-
-      btn.setActive(isActive);
-      el.setAttribute('aria-selected', String(isActive));
-      el.setAttribute('tabindex', isActive ? '0' : '-1');
-
-      if (this.preLoad) {
-        this.panels[i].hidden = !isActive;
-      }
-    });
-
+  setTabContent(index, newContent) {
     const panelId = `panel-${index}`;
-    if (!this.preLoad) {
-      this.renderPanel(panelId);
-    }
+    const data = this.panelMap.get(panelId);
+    if (!data) return;
 
-    this.tabButtons[index].getElement().focus();
+    data.content = newContent;
+
+    if (this.preLoad && this.panels[index]) {
+      const panel = this.panels[index];
+      panel.innerHTML = '';
+      if (typeof newContent === 'string') {
+        panel.innerHTML = newContent;
+      } else if (newContent instanceof HTMLElement) {
+        panel.appendChild(newContent);
+      }
+    } else {
+      const isActive = this.tabButtons[index].getElement().getAttribute('aria-selected') === 'true';
+      if (isActive) {
+        this._renderPanel(panelId);
+      }
+    }
   }
 
-  handleKeyDown(e) {
+  _handleKeyDown(e) {
     const current = this.tabButtons.findIndex(btn => btn.getElement() === document.activeElement);
     if (current === -1) return;
 
     let next = current;
-    switch (e.key) {
-      case 'ArrowRight':
-        next = (current + 1) % this.tabButtons.length;
-        break;
-      case 'ArrowLeft':
-        next = (current - 1 + this.tabButtons.length) % this.tabButtons.length;
-        break;
-      case 'Home':
-        next = 0;
-        break;
-      case 'End':
-        next = this.tabButtons.length - 1;
-        break;
-      case 'Enter':
-      case ' ':
-        e.preventDefault();
-        this.activateTab(current);
-        return;
-      default:
-        return;
+    const dir = ['ArrowRight', 'End'].includes(e.key) ? 1 : -1;
+
+    do {
+      next = (next + dir + this.tabButtons.length) % this.tabButtons.length;
+    } while (this.tabButtons[next].getElement().disabled && next !== current);
+
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      this.activateTab(current);
+      return;
     }
 
     e.preventDefault();
