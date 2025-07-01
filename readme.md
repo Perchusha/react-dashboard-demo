@@ -1,4 +1,4 @@
-# React Dashboard Demo (Vanilla JS + Storybook + Tailwind CSS)
+# Frontend Developer Technical Test (Vanilla JS + Storybook + Tailwind CSS)
 
 This project is a component-based UI system built with **Vanilla JavaScript**, styled using **Tailwind CSS v4**, and documented via **Storybook 8**.
 
