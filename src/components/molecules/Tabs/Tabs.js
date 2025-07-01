@@ -1,15 +1,62 @@
 import { Button } from '../../atoms/Button/Button.js';
 
 export class Tabs {
-  constructor({ tabs = [], preLoad = false, align = 'left', onTabChange = null }) {
+  constructor(
+    { tabs = [], preLoad = false, align = 'left', onTabChange = null } = {},
+    existingEl = null
+  ) {
     if (!Array.isArray(tabs)) {
       throw new Error('Tabs constructor expects an array of tab definitions.');
+    }
+    this.onTabChange = onTabChange;
+
+    if (existingEl) {
+      this.container = existingEl;
+      const {
+        tabs: pTabs,
+        preLoad: pPre,
+        align: pAlign,
+        onTabChange: pOTC,
+      } = JSON.parse(this.container.dataset.props);
+      this.tabs = pTabs;
+      this.preLoad = pPre;
+      this.align = pAlign;
+      this.onTabChange = pOTC;
+
+      this.tablist = this.container.querySelector('[role="tablist"]');
+      this.tabButtons = Array.from(this.tablist.querySelectorAll('[role="tab"]')).map(
+        (el, idx) => ({
+          index: idx,
+          getElement: () => el,
+          setActive: active => {
+            el.classList.toggle('bg-blue-800', active);
+            el.setAttribute('aria-selected', String(active));
+            el.setAttribute('tabindex', active ? '0' : '-1');
+          },
+        })
+      );
+
+      if (this.preLoad) {
+        this.panels = Array.from(this.container.querySelectorAll('[role="tabpanel"]'));
+      } else {
+        const firstPanel = this.container.querySelector('[role="tabpanel"]');
+        this.panels = [];
+        this.panelContainer = firstPanel
+          ? firstPanel.parentElement
+          : this.container.appendChild(document.createElement('div'));
+      }
+
+      this.panelMap = new Map(
+        this.tabs.map((tab, i) => [`panel-${i}`, { content: tab.content, tabId: `tab-${i}` }])
+      );
+
+      this._attachEvents();
+      return;
     }
 
     this.tabs = tabs;
     this.preLoad = preLoad;
     this.align = align;
-    this.onTabChange = onTabChange;
 
     this.container = document.createElement('div');
     this.tabButtons = [];
@@ -22,96 +69,86 @@ export class Tabs {
   }
 
   _render() {
-    const alignment = {
+    const alignCls = {
       left: 'justify-start',
       center: 'justify-center',
       right: 'justify-end',
-    };
-
+    }[this.align];
     this.tablist = document.createElement('div');
     this.tablist.setAttribute('role', 'tablist');
-    this.tablist.setAttribute('aria-label', 'Tabs');
-    this.tablist.className = `flex gap-2 px-2 py-2 border-b ${alignment[this.align] || alignment.left}`;
+    this.tablist.className = `flex gap-2 px-2 py-2 border-b ${alignCls}`;
 
-    this.tabs.forEach((tab, index) => {
-      const isSelected = index === 0;
-      const isDisabled = tab.disabled === true;
-      const tabId = `tab-${index}`;
-      const panelId = `panel-${index}`;
+    this.container.appendChild(this.tablist);
+    if (!this.preLoad) {
+      this.container.appendChild(this.panelContainer);
+    }
 
-      const button = new Button({
+    this.tabs.forEach((tab, i) => {
+      const isSel = i === 0;
+      const btn = new Button({
         text: tab.label,
         variant: 'secondary',
         size: 'medium',
-        disabled: isDisabled,
+        disabled: !!tab.disabled,
         className: 'rounded-none border-b-2 border-transparent aria-selected:border-blue-500',
       });
-
-      const el = button.getElement();
-      el.id = tabId;
+      const el = btn.getElement();
+      el.id = `tab-${i}`;
       el.setAttribute('role', 'tab');
-      el.setAttribute('aria-controls', panelId);
-      el.setAttribute('aria-selected', String(isSelected));
-      el.setAttribute('tabindex', isDisabled ? '-1' : isSelected ? '0' : '-1');
+      el.setAttribute('aria-controls', `panel-${i}`);
+      el.setAttribute('aria-selected', String(isSel));
+      el.setAttribute('tabindex', isSel ? '0' : '-1');
 
-      this.tabButtons.push(button);
+      this.tabButtons.push({
+        index: i,
+        getElement: () => el,
+        setActive: active => {
+          btn.setActive(active);
+          el.setAttribute('aria-selected', String(active));
+          el.setAttribute('tabindex', active ? '0' : '-1');
+        },
+      });
       this.tablist.appendChild(el);
 
-      this.panelMap.set(panelId, { content: tab.content, tabId });
+      this.panelMap.set(`panel-${i}`, { content: tab.content, tabId: `tab-${i}` });
 
       if (this.preLoad) {
         const panel = document.createElement('div');
-        panel.id = panelId;
+        panel.id = `panel-${i}`;
         panel.setAttribute('role', 'tabpanel');
-        panel.setAttribute('aria-labelledby', tabId);
+        panel.setAttribute('aria-labelledby', `tab-${i}`);
         panel.tabIndex = 0;
-        panel.hidden = !isSelected;
+        panel.hidden = !isSel;
         panel.className = 'p-4';
-        panel.innerHTML = typeof tab.content === 'string' ? tab.content : '';
+        panel.innerHTML = tab.content;
         this.panels.push(panel);
+        this.container.appendChild(panel);
       }
     });
 
-    this.tabButtons.forEach((btn, i) => {
+    this._attachEvents();
+  }
+
+  _attachEvents() {
+    this.tabButtons.forEach(btn => {
       const el = btn.getElement();
       if (!el.disabled) {
-        el.addEventListener('click', () => this.activateTab(i));
+        el.addEventListener('click', () => this.activateTab(btn.index));
         el.addEventListener('keydown', e => this._handleKeyDown(e));
       }
     });
-
-    this.container.appendChild(this.tablist);
-    if (this.preLoad) {
-      this.panels.forEach(panel => this.container.appendChild(panel));
-    } else {
-      this.container.appendChild(this.panelContainer);
-    }
   }
 
   activateTab(index) {
-    const btn = this.tabButtons[index];
-    if (!btn || btn.getElement().disabled) return;
+    this.tabButtons.forEach(tb => tb.setActive(tb.index === index));
 
-    this.tabButtons.forEach((btn, i) => {
-      const isActive = i === index;
-      const el = btn.getElement();
-
-      btn.setActive(isActive);
-      el.setAttribute('aria-selected', String(isActive));
-      el.setAttribute('tabindex', isActive ? '0' : '-1');
-
-      if (this.preLoad && this.panels[i]) {
-        this.panels[i].hidden = !isActive;
-      }
-    });
-
-    const panelId = `panel-${index}`;
-    if (!this.preLoad) {
-      this._renderPanel(panelId);
+    if (this.preLoad) {
+      this.panels.forEach((panel, i) => {
+        panel.hidden = i !== index;
+      });
+    } else {
+      this._renderPanel(`panel-${index}`);
     }
-
-    const el = this.tabButtons[index].getElement();
-    if (el.offsetParent !== null) el.focus();
 
     if (typeof this.onTabChange === 'function') {
       this.onTabChange(index);
@@ -121,67 +158,52 @@ export class Tabs {
   _renderPanel(panelId) {
     const data = this.panelMap.get(panelId);
     if (!data) return;
-
     this.panelContainer.innerHTML = '';
-
     const panel = document.createElement('div');
     panel.id = panelId;
     panel.setAttribute('role', 'tabpanel');
     panel.setAttribute('aria-labelledby', data.tabId);
     panel.tabIndex = 0;
     panel.className = 'p-4';
-
-    if (typeof data.content === 'string') {
-      panel.innerHTML = data.content;
-    } else if (data.content instanceof HTMLElement) {
-      panel.appendChild(data.content);
-    }
-
+    panel.innerHTML = data.content;
     this.panelContainer.appendChild(panel);
+  }
+
+  _handleKeyDown(e) {
+    const key = e.key;
+    const cur = this.tabButtons.findIndex(tb => tb.getElement() === e.target);
+    if (cur < 0) return;
+    let nxt = cur;
+    if (key === 'ArrowRight' || key === 'ArrowDown') {
+      nxt = (cur + 1) % this.tabButtons.length;
+    } else if (key === 'ArrowLeft' || key === 'ArrowUp') {
+      nxt = (cur - 1 + this.tabButtons.length) % this.tabButtons.length;
+    } else if (key === 'Home') {
+      nxt = 0;
+    } else if (key === 'End') {
+      nxt = this.tabButtons.length - 1;
+    } else if (key === 'Enter' || key === ' ') {
+      e.preventDefault();
+      return this.activateTab(cur);
+    } else {
+      return;
+    }
+    e.preventDefault();
+    this.tabButtons[nxt].getElement().focus();
   }
 
   setTabContent(index, newContent) {
     const panelId = `panel-${index}`;
     const data = this.panelMap.get(panelId);
     if (!data) return;
+    data.content =
+      typeof newContent === 'string' ? newContent : newContent.outerHTML || newContent.innerHTML;
 
-    data.content = newContent;
-
-    if (this.preLoad && this.panels[index]) {
-      const panel = this.panels[index];
-      panel.innerHTML = '';
-      if (typeof newContent === 'string') {
-        panel.innerHTML = newContent;
-      } else if (newContent instanceof HTMLElement) {
-        panel.appendChild(newContent);
-      }
-    } else {
-      const isActive = this.tabButtons[index].getElement().getAttribute('aria-selected') === 'true';
-      if (isActive) {
-        this._renderPanel(panelId);
-      }
+    if (this.preLoad) {
+      this.panels[index].innerHTML = data.content;
+    } else if (this.tabButtons[index].getElement().getAttribute('aria-selected') === 'true') {
+      this._renderPanel(panelId);
     }
-  }
-
-  _handleKeyDown(e) {
-    const current = this.tabButtons.findIndex(btn => btn.getElement() === document.activeElement);
-    if (current === -1) return;
-
-    let next = current;
-    const dir = ['ArrowRight', 'End'].includes(e.key) ? 1 : -1;
-
-    do {
-      next = (next + dir + this.tabButtons.length) % this.tabButtons.length;
-    } while (this.tabButtons[next].getElement().disabled && next !== current);
-
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      this.activateTab(current);
-      return;
-    }
-
-    e.preventDefault();
-    this.tabButtons[next].getElement().focus();
   }
 
   getElement() {

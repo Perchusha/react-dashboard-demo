@@ -1,29 +1,32 @@
 export class Input {
-  constructor({
-    id = '',
-    type = 'text',
-    className = '',
-    value = '',
-    placeholder = '',
-    disabled = false,
-    required = false,
-    name = '',
-    ariaLabel = '',
-    minLength,
-    maxLength,
-    pattern,
-    errorMessage,
-    showError = true,
-    validation,
-    fullWidth = false,
-    ...attrs
-  }) {
+  constructor(
+    {
+      id = '',
+      type = 'text',
+      className = '',
+      value = '',
+      placeholder = '',
+      disabled = false,
+      required = false,
+      name = '',
+      ariaLabel = '',
+      minLength,
+      maxLength,
+      pattern,
+      errorMessage = 'Invalid format',
+      showError = true,
+      validation,
+      fullWidth = false,
+      attrs = {},
+    } = {},
+    existingEl = null
+  ) {
     Object.assign(this, {
       id,
       type,
       className,
-      value,
       placeholder,
+      value,
       disabled,
       required,
       name,
@@ -35,17 +38,22 @@ export class Input {
       showError,
       validation,
       fullWidth,
-      attrs,
     });
+    this.attrs = attrs;
 
-    this.element = document.createElement('input');
-    this.error = document.createElement('div');
-    this.error.className = 'absolute text-red-500 text-sm pointer-events-none';
-    this.error.setAttribute('aria-live', 'polite');
-    this.error.hidden = true;
-
-    this._render();
-    this._attachEvents();
+    if (existingEl) {
+      this.element = existingEl;
+      this.error = this.element.nextElementSibling;
+      this._attachEvents();
+    } else {
+      this.element = document.createElement('input');
+      this.error = document.createElement('div');
+      this.error.className = 'absolute text-red-500 text-xs pointer-events-none';
+      this.error.setAttribute('aria-live', 'polite');
+      this.error.hidden = true;
+      this._render();
+      this._attachEvents();
+    }
   }
 
   _render() {
@@ -64,10 +72,10 @@ export class Input {
 
     const baseClass =
       'border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-300';
-    const disabledClass = 'bg-gray-100 text-gray-500 cursor-not-allowed';
+    const disabledClass = this.disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : '';
     const fullWidthClass = this.fullWidth ? 'w-full' : '';
 
-    el.className = [baseClass, this.disabled ? disabledClass : '', fullWidthClass, this.className]
+    el.className = [baseClass, disabledClass, fullWidthClass, this.className]
       .filter(Boolean)
       .join(' ');
 
@@ -77,9 +85,7 @@ export class Input {
   }
 
   _attachEvents() {
-    this.element.addEventListener('input', () => {
-      this.validate();
-    });
+    this.element.addEventListener('input', () => this.validate());
   }
 
   validate() {
@@ -92,8 +98,8 @@ export class Input {
       error = `Minimum ${this.minLength} characters`;
     } else if (this.maxLength && val.length > this.maxLength) {
       error = `Maximum ${this.maxLength} characters`;
-    } else if (this.pattern && !this.pattern.test(val)) {
-      error = this.errorMessage || 'Invalid format';
+    } else if (this.pattern && !new RegExp(this.pattern).test(val)) {
+      error = this.errorMessage;
     }
 
     if (!error && typeof this.validation === 'function') {
@@ -108,15 +114,14 @@ export class Input {
   }
 
   setError(message) {
-    const el = this.element;
     if (message) {
-      el.classList.add('border-red-500');
-      el.setAttribute('aria-invalid', 'true');
+      this.element.classList.add('border-red-500');
+      this.element.setAttribute('aria-invalid', 'true');
       this.error.textContent = message;
       this.error.hidden = !this.showError;
     } else {
-      el.classList.remove('border-red-500');
-      el.removeAttribute('aria-invalid');
+      this.element.classList.remove('border-red-500');
+      this.element.removeAttribute('aria-invalid');
       this.error.textContent = '';
       this.error.hidden = true;
     }

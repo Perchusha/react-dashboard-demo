@@ -3,20 +3,28 @@ import { Label } from '../../atoms/Label/Label.js';
 import { Button } from '../../atoms/Button/Button.js';
 
 export class PasswordInput {
-  constructor({
-    id = 'password',
-    label = 'Password',
-    labelInline = false,
-    placeholder = 'Enter password',
-    value = '',
-    minLength = 5,
-    maxLength = 12,
-    allowedPattern = '^[a-zA-Z0-9!@#$%&*]*$',
-    showError = true,
-    fullWidth = false,
-    classNameInput = '',
-    classNameToggle = '',
-  }) {
+  /**
+   * @param {Object} props
+   * @param {HTMLDivElement|null} existingEl
+   */
+  constructor(
+    {
+      id = 'password',
+      label = 'Password',
+      labelInline = false,
+      placeholder = 'Enter password',
+      value = '',
+      minLength = 5,
+      maxLength = 12,
+      allowedPattern = '^[a-zA-Z0-9!@#$%&*]*$',
+      showError = true,
+      fullWidth = false,
+      classNameInput = '',
+      classNameToggle = '',
+    } = {},
+    existingEl = null
+  ) {
+    // assign props
     Object.assign(this, {
       id,
       labelInline,
@@ -30,80 +38,130 @@ export class PasswordInput {
       classNameInput,
       classNameToggle,
     });
-
     this.labelText = label;
     this.visible = false;
 
-    this.container = document.createElement('div');
-    this.container.className = `${this.labelInline ? 'flex items-center gap-4' : 'flex flex-col gap-1'} ${this.fullWidth ? 'w-full' : ''}`;
+    if (existingEl) {
+      // Hydrate existing markup
+      this.container = existingEl;
+      this.inputEl = this.container.querySelector('input');
+      this.errorEl = this.container.querySelector('div[aria-live]');
+      this.toggleEl = this.container.querySelector('button');
 
-    this.label = new Label({ text: this.labelText, htmlFor: this.id });
+      // Rehydrate Input instance
+      try {
+        const inputProps = JSON.parse(this.inputEl.getAttribute('data-props'));
+        this.input = new Input(inputProps, this.inputEl);
+      } catch (e) {
+        console.warn('Failed to hydrate Input:', e);
+      }
 
-    let patternRegex;
-    try {
-      patternRegex = new RegExp(this.allowedPattern);
-    } catch (e) {
-      console.warn('Invalid regex pattern:', this.allowedPattern);
-      patternRegex = /^[a-zA-Z0-9!@#$%&*]*$/;
+      // Rehydrate Toggle Button instance
+      try {
+        const toggleProps = JSON.parse(this.toggleEl.getAttribute('data-props'));
+        this.toggle = new Button(toggleProps, this.toggleEl);
+      } catch (e) {
+        console.warn('Failed to hydrate Button:', e);
+      }
+
+      this._attachEvents();
+    } else {
+      // Initial render
+      this.container = document.createElement('div');
+      this.container.className = `${
+        this.labelInline ? 'flex items-center gap-4' : 'flex flex-col gap-1'
+      } ${this.fullWidth ? 'w-full' : ''}`;
+
+      // Label
+      this.label = new Label({ text: label, htmlFor: id });
+
+      // Create Input
+      this.input = new Input({
+        id: this.id,
+        type: 'password',
+        placeholder: this.placeholder,
+        value: this.value,
+        minLength: this.minLength,
+        maxLength: this.maxLength,
+        pattern: new RegExp(this.allowedPattern),
+        errorMessage: 'Only letters, numbers and these characters are allowed: !@#$%&*',
+        className: `flex-1 ${this.classNameInput}`.trim(),
+        showError: this.showError,
+        fullWidth: this.fullWidth,
+      });
+      this.inputEl = this.input.element;
+      // Attach data-props for hydration
+      this.inputEl.setAttribute(
+        'data-props',
+        JSON.stringify({
+          id: this.id,
+          type: 'password',
+          placeholder: this.placeholder,
+          value: this.value,
+          minLength: this.minLength,
+          maxLength: this.maxLength,
+          pattern: this.allowedPattern,
+          showError: this.showError,
+          fullWidth: this.fullWidth,
+          className: `flex-1 ${this.classNameInput}`.trim(),
+        })
+      );
+      this.inputEl.setAttribute('data-component', 'Input');
+
+      const toggleProps = {
+        text: this._getEyeIcon(false),
+        size: 'small',
+        isSquare: true,
+        'aria-label': 'Show password',
+        className: `${this.classNameToggle}`.trim(),
+        variant: 'secondary',
+        isHtmlContent: true,
+      };
+      this.toggle = new Button(toggleProps);
+      this.toggleEl = this.toggle.getElement();
+      // Attach data-props for hydration
+      this.toggleEl.setAttribute('data-props', JSON.stringify(toggleProps));
+      this.toggleEl.setAttribute('data-component', 'Button');
+
+      // Render structure
+      this._render();
+      this._attachEvents();
     }
-
-    this.input = new Input({
-      id: this.id,
-      type: 'password',
-      placeholder: this.placeholder,
-      value: this.value,
-      minLength: this.minLength,
-      maxLength: this.maxLength,
-      pattern: patternRegex,
-      errorMessage: 'Only letters, numbers and these characters are allowed: !@#$%&*',
-      className: `flex-1 ${this.classNameInput}`.trim(),
-      showError: this.showError,
-      fullWidth: this.fullWidth,
-    });
-
-    this.inputEl = this.input.element;
-
-    this.toggle = new Button({
-      text: this._getEyeIcon(false),
-      size: 'small',
-      isSquare: true,
-      'aria-label': 'Show password',
-      className: `ml-1 ${this.classNameToggle}`.trim(),
-      variant: 'secondary',
-      isHtmlContent: true,
-    });
-
-    this.wrapper = null;
-
-    this._render();
-    this._attachEvents();
   }
 
   _render() {
-    const inputWrapper = document.createElement('div');
-    inputWrapper.className = 'flex items-center gap-2';
+    const wrapper = document.createElement('div');
+    wrapper.className = `flex items-center gap-2 ${this.fullWidth ? 'w-full' : ''}`;
 
-    inputWrapper.appendChild(this.input.getElement());
-    inputWrapper.appendChild(this.toggle.getElement());
+    // Append label if present
+    if (this.labelText) {
+      this.container.appendChild(this.label.getElement());
+    }
 
+    // Wrap input + toggle
+    wrapper.appendChild(this.input.getElement());
+    wrapper.appendChild(this.toggleEl);
+
+    // Link error
     this.inputEl.setAttribute('aria-describedby', `${this.id}-error`);
 
-    this.container.appendChild(this.label.getElement());
-    this.container.appendChild(inputWrapper);
+    this.container.appendChild(wrapper);
   }
 
   _attachEvents() {
-    this.toggle.getElement().addEventListener('click', () => this.toggleVisibility());
+    // Toggle visibility
+    this.toggleEl.addEventListener('click', () => this.toggleVisibility());
+    // Validation on input
+    if (this.input && this.inputEl) {
+      this.inputEl.addEventListener('input', () => this.input.validate());
+    }
   }
 
   toggleVisibility() {
     this.visible = !this.visible;
     this.inputEl.type = this.visible ? 'text' : 'password';
-
-    this.toggle.getElement().innerHTML = this._getEyeIcon(this.visible);
-    this.toggle
-      .getElement()
-      .setAttribute('aria-label', this.visible ? 'Hide password' : 'Show password');
+    this.toggleEl.innerHTML = this._getEyeIcon(this.visible);
+    this.toggleEl.setAttribute('aria-label', this.visible ? 'Hide password' : 'Show password');
   }
 
   _getEyeIcon(open) {
@@ -125,9 +183,6 @@ export class PasswordInput {
   }
 
   getElement() {
-    if (!this.wrapper) {
-      this.wrapper = this.container;
-    }
-    return this.wrapper;
+    return this.container;
   }
 }

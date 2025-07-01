@@ -1,5 +1,8 @@
 export class Label {
-  constructor({ text, htmlFor = '', className = '', isHtml = false, id = '', ...attrs }) {
+  constructor(
+    { text = '', htmlFor = '', className = '', isHtml = false, id = '', attrs = {} } = {},
+    existingEl = null
+  ) {
     this.text = text;
     this.htmlFor = htmlFor;
     this.className = className;
@@ -7,8 +10,12 @@ export class Label {
     this.id = id;
     this.attrs = attrs;
 
-    this.element = document.createElement('label');
-    this._render();
+    if (existingEl) {
+      this.element = existingEl;
+    } else {
+      this.element = document.createElement('label');
+      this._render();
+    }
   }
 
   _render() {
@@ -23,10 +30,8 @@ export class Label {
     if (this.htmlFor) {
       this.element.setAttribute('for', this.htmlFor);
     }
-    this.element.className = ['block text-sm font-medium text-gray-700', this.className]
-      .filter(Boolean)
-      .join(' ');
-
+    const baseClass = 'block text-sm font-medium text-gray-700';
+    this.element.className = [baseClass, this.className].filter(Boolean).join(' ');
     for (const [key, val] of Object.entries(this.attrs)) {
       this.element.setAttribute(key, val);
     }

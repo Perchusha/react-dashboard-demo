@@ -1,13 +1,16 @@
 {
   "name": "vanilla-js-test",
   "version": "1.0.0",
+  "type": "module",
   "private": true,
   "scripts": {
-    "build:css": "npx @tailwindcss/cli -i ./src/styles/tailwind.css -o ./src/styles/output.css",
+    "build:css": "npx @tailwindcss/cli -i ./src/styles/tailwind.css -o ./public/styles.css --minify --watch",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "build:client": "esbuild public/client.js --bundle --outfile=public/bundle.js --format=esm --target=es2015",
+    "dev": "concurrently \"npm run build:css\" \"npm run build:client\" \"nodemon server.js\""
   },
-  "devDependencies": {
+  "dependencies": {
     "@storybook/addon-essentials": "^8.6.14",
     "@storybook/addon-webpack5-compiler-swc": "^3.0.0",
     "@storybook/blocks": "^8.6.14",
@@ -15,7 +18,12 @@
     "@storybook/web-components": "^8.6.14",
     "@storybook/web-components-webpack5": "^8.6.14",
     "@tailwindcss/cli": "^4.1.11",
+    "concurrently": "^9.2.0",
+    "esbuild": "^0.25.5",
+    "express": "^5.1.0",
+    "jsdom": "^26.1.0",
     "lit": "^3.3.0",
+    "nodemon": "^3.1.10",
     "prettier": "^3.6.2",
     "storybook": "^8.6.14",
     "tailwindcss": "^4.1.11"

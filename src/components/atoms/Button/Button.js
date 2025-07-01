@@ -1,18 +1,21 @@
 export class Button {
-  constructor({
-    id = '',
-    text = '',
-    type = 'button',
-    className = '',
-    variant = 'primary', // 'primary' | 'secondary'
-    size = 'medium', // 'small' | 'medium' | 'large'
-    isSquare = false,
-    active = false,
-    disabled = false,
-    isHtmlContent = false,
-    onClick,
-    ...attrs
-  }) {
+  constructor(
+    {
+      id = '',
+      text = '',
+      type = 'button',
+      className = '',
+      variant = 'primary',
+      size = 'medium',
+      isSquare = false,
+      active = false,
+      disabled = false,
+      isHtmlContent = false,
+      onClick = null,
+      attrs = {},
+    } = {},
+    existingEl = null
+  ) {
     Object.assign(this, {
       id,
       text,
@@ -25,8 +28,9 @@ export class Button {
       disabled,
       isHtmlContent,
       onClick,
-      attrs,
     });
+
+    this.attrs = attrs;
 
     this.sizeClasses = {
       small: 'px-3 py-2 text-xs',
@@ -42,37 +46,35 @@ export class Button {
     this.activeClass = 'bg-blue-800';
     this.disabledClass = 'opacity-50 cursor-not-allowed';
 
-    this.element = document.createElement('button');
+    this.element = existingEl || document.createElement('button');
     this.element.type = this.type;
 
-    this._render();
+    if (!existingEl) {
+      this._render();
+    }
+    this._attachEvents();
   }
 
   _render() {
-    // Очистка предыдущего обработчика
     if (this._clickHandler) {
       this.element.removeEventListener('click', this._clickHandler);
       this._clickHandler = null;
     }
 
-    // Контент
     if (this.isHtmlContent) {
       this.element.innerHTML = this.text;
     } else {
       this.element.textContent = this.text;
     }
 
-    // Атрибуты
-    if (this.id) this.element.id = this.id;
+    this.element.id = this.id;
     this.element.disabled = this.disabled;
-
     if (this.disabled) {
       this.element.setAttribute('aria-disabled', 'true');
     } else {
       this.element.removeAttribute('aria-disabled');
     }
 
-    // Стили
     const baseClass = [
       'font-bold',
       'rounded',
@@ -100,14 +102,14 @@ export class Button {
 
     this.element.className = classList;
 
-    // Дополнительные атрибуты
     for (const [key, val] of Object.entries(this.attrs)) {
       this.element.setAttribute(key, val);
     }
+  }
 
-    // Установка обработчика клика
+  _attachEvents() {
     if (typeof this.onClick === 'function' && !this.disabled) {
-      this._clickHandler = this.onClick;
+      this._clickHandler = () => this.onClick();
       this.element.addEventListener('click', this._clickHandler);
     }
   }
@@ -122,17 +124,9 @@ export class Button {
     this._render();
   }
 
-  update({ text, id, className, variant, size, isSquare, isHtmlContent, onClick, ...attrs }) {
-    if (text !== undefined) this.text = text;
-    if (id !== undefined) this.id = id;
-    if (className !== undefined) this.className = className;
-    if (variant !== undefined) this.variant = variant;
-    if (size !== undefined) this.size = size;
-    if (isSquare !== undefined) this.isSquare = isSquare;
-    if (isHtmlContent !== undefined) this.isHtmlContent = isHtmlContent;
-    if (onClick !== undefined) this.onClick = onClick;
-
-    Object.assign(this.attrs, attrs);
+  update(newProps = {}) {
+    Object.assign(this, newProps);
+    if (newProps.attrs) Object.assign(this.attrs, newProps.attrs);
     this._render();
   }
 
