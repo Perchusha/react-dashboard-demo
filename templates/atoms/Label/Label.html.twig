@@ -1,0 +1,23 @@
+{% set extraAttrs = '' %}
+
+{% if id is defined %}
+  {% set extraAttrs = extraAttrs ~ ' id="' ~ id ~ '"' %}
+{% endif %}
+{% if htmlFor is defined and htmlFor %}
+  {% set extraAttrs = extraAttrs ~ ' for="' ~ htmlFor ~ '"' %}
+{% endif %}
+
+{% for key, val in attrs|default({}) %}
+  {% set extraAttrs = extraAttrs ~ ' ' ~ key ~ '="' ~ val ~ '"' %}
+{% endfor %}
+
+<label
+  class="{{ ['block text-sm font-medium text-gray-700', className|default('')]|join(' ')|trim }}"
+  {{ extraAttrs|raw }}
+>
+  {% if isHtml %}
+    {{ text|raw }}
+  {% else %}
+    {{ text|default('') }}
+  {% endif %}
+</label>

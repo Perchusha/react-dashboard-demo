@@ -1,0 +1,61 @@
+{% set extraAttrs = '' %}
+{% for key, val in attrs|default({}) %}
+  {% set extraAttrs = extraAttrs ~ ' ' ~ key ~ '="' ~ val ~ '"' %}
+{% endfor %}
+{% set disabled = disabled|default(false) %}
+{% set sizeClasses = {
+  small: 'px-3 py-2 text-xs',
+  medium: 'px-5 py-2.5 text-sm',
+  large: 'px-5 py-3 text-base'
+} %}
+{% set variants = {
+  primary: 'bg-blue-500 text-white hover:bg-blue-600',
+  secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+} %}
+{% set activeClass = 'bg-blue-800' %}
+{% set disabledClass = 'opacity-50 cursor-not-allowed' %}
+{% set base =
+  [
+    'font-bold',
+    'rounded',
+    disabled ? '' : 'cursor-pointer',
+    sizeClasses[size|default('medium')],
+    isSquare ? 'aspect-square p-0 w-auto' : ''
+  ]|join(' ')
+%}
+{% set variantClass = variants[variant|default('primary')] %}
+{% if disabled %}
+  {% set variantClass =
+    variantClass|replace({
+      'hover:bg-\\w+-\\d+': ''
+    })
+  %}
+{% endif %}
+
+<button
+  type="{{ type|default('button') }}"
+  id="{{ id|default('') }}"
+  class="{{ [
+    base,
+    variantClass,
+    active ? activeClass : '',
+    disabled ? disabledClass : '',
+    className|default('')
+  ]
+    |join(' ')
+    |trim }}"
+  aria-pressed="{{ active ? 'true' : 'false' }}"
+  aria-disabled="{{ disabled ? 'true' : 'false' }}"
+  data-controller="button"
+  data-button-active-value="{{ active ? 1 : 0 }}"
+  data-button-disabled-value="{{ disabled ? 1 : 0 }}"
+  data-action="click->button#handleClick keydown->button#keydown"
+  {{ extraAttrs|raw }}
+  {# встраиваем уже готовую строку атрибутов #}
+>
+  {% if isHtmlContent %}
+    {{ text|raw }}
+  {% else %}
+    {{ text|default('') }}
+  {% endif %}
+</button>

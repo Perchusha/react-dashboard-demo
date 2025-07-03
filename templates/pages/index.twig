@@ -1,0 +1,20 @@
+{% extends 'layouts/base.twig' %}
+
+{% block body %}
+  {% include 'atoms/Button/Button.html.twig' with button only %}
+{% endblock %}
+
+{% extends 'layouts/base.twig' %}
+
+{% block body %}
+  <h2 class="text-xl font-semibold mb-6 mt-2 text-center">Vanilla JS Test</h2>
+  <ul class="space-y-2">
+    <li><a href="/button" class="text-blue-600 hover:underline">Button Component</a></li>
+    <li><a href="/input" class="text-blue-600 hover:underline">Input Component</a></li>
+    <li><a href="/label" class="text-blue-600 hover:underline">Label Component</a></li>
+    <li><a href="/tabs" class="text-blue-600 hover:underline">Tabs Component</a></li>
+    <li>
+      <a href="/password-input" class="text-blue-600 hover:underline">Password Input Component</a>
+    </li>
+  </ul>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% set extraAttrs = '' %}
+{% if disabled %}
+  {% set extraAttrs = extraAttrs ~ ' disabled aria-disabled=\"true\"' %}
+{% endif %}
+{% if required %}
+  {% set extraAttrs = extraAttrs ~ ' required' %}
+{% endif %}
+{% if ariaLabel %}
+  {% set extraAttrs = extraAttrs ~ ' aria-label=\"' ~ ariaLabel ~ '\"' %}
+{% endif %}
+{% if pattern %}
+  {% set extraAttrs = extraAttrs ~ ' pattern=\"' ~ pattern ~ '\"' %}
+{% endif %}
+{% for key, val in attrs|default({}) %}
+  {% set extraAttrs = extraAttrs ~ ' ' ~ key ~ '=\"' ~ val ~ '\"' %}
+{% endfor %}
+
+{% set baseClass =
+  'border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-300'
+%}
+{% set disabledClass = 'bg-gray-100 text-gray-500 cursor-not-allowed' %}
+{% set fullWidthClass = fullWidth ? 'w-full' : '' %}
+{% set inputClasses =
+  [baseClass, disabled ? disabledClass : '', fullWidthClass, className|default('')]|join(' ')|trim
+%}
+
+<div
+  data-controller="input"
+  data-input-min-length-value="{{ minLength|default('') }}"
+  data-input-max-length-value="{{ maxLength|default('') }}"
+  data-input-pattern-value="{{ pattern ? '^' ~ pattern ~ '$' : '' }}"
+  data-input-error-message-value="{{ errorMessage|default('') }}"
+  data-input-show-error-value="{{ showError|default(true) ? 'true' : 'false' }}"
+  class="relative {{ fullWidthClass }}"
+>
+  <input
+    data-input-target="field"
+    data-password-input-target="field"
+    data-action="input->input#validate blur->input#validate"
+    type="{{ type|default('text') }}"
+    id="{{ id|default('') }}"
+    name="{{ name|default('') }}"
+    value="{{ value|default('') }}"
+    placeholder="{{ placeholder|default('') }}"
+    class="{{ inputClasses }}"
+    {{ extraAttrs|trim|raw }}
+  />
+  <div
+    data-input-target="error"
+    class="absolute text-red-500 text-sm pointer-events-none"
+    aria-live="polite"
+    hidden
+  ></div>
+</div>

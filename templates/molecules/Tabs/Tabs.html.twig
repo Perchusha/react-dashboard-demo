@@ -1,0 +1,59 @@
+{% set alignMap = {
+  left: 'justify-start',
+  center: 'justify-center',
+  right: 'justify-end'
+} %}
+
+<div
+  data-controller="tabs"
+  data-tabs-pre-load-value="{{ preLoad ? 'true' : 'false' }}"
+  data-tabs-align-value="{{ align|default('left') }}"
+>
+  <div
+    role="tablist"
+    aria-label="Tabs"
+    class="flex gap-2 px-2 py-2 border-b {{ alignMap[align|default('left')] }}"
+  >
+    {% for tab in tabs %}
+      {% set idx = loop.index0 %}
+
+      {% include 'atoms/Button/Button.html.twig' with {
+        text: tab.label,
+        variant: 'primary',
+        size: 'medium',
+        active: idx == 0,
+        disabled: tab.disabled|default(false),
+        className: 'rounded-none border-b-2 border-transparent',
+        isSquare: false,
+        isHtmlContent: false,
+        attrs: {
+          'data-tabs-target': 'tab',
+          'data-tabs-panel-content': tab.content|e('html_attr'),
+          id: 'tab-' ~ idx,
+          role: 'tab',
+          'aria-controls': 'panel-' ~ idx,
+          'aria-selected': idx == 0 ? 'true' : 'false',
+          tabindex: idx == 0 ? '0' : '-1'
+        }
+      } only %}
+    {% endfor %}
+  </div>
+
+  <div data-tabs-target="panelContainer">
+    {% if preLoad %}
+      {% for tab in tabs %}
+        <div
+          id="panel-{{ loop.index0 }}"
+          role="tabpanel"
+          aria-labelledby="tab-{{ loop.index0 }}"
+          tabindex="0"
+          class="p-4"
+          hidden
+          data-tabs-target="panel"
+        >
+          {{ tab.content|raw }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+</div>
